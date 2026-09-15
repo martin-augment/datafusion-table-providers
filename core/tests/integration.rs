@@ -62,7 +62,7 @@ async fn drop_container(running_container: Option<RunningContainer>, port: u16) 
                 if let Err(e) = running_container.stop().await {
                     tracing::error!("Error stopping Docker container: {e}");
                 }
-            },
+            }
             None => {
                 tracing::info!("Removing Docker container on port {port}");
                 if let Err(e) = running_container.remove().await {
@@ -70,7 +70,6 @@ async fn drop_container(running_container: Option<RunningContainer>, port: u16) 
                 }
             }
         }
-
     }
 }
 

@@ -4,7 +4,7 @@ use datafusion_table_providers::mongodb::table::MongoDBTable;
 use mongodb::bson::{doc, Bson, DateTime as BsonDateTime, Decimal128, Document};
 use rstest::rstest;
 use std::str::FromStr;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
 use arrow::{
@@ -889,7 +889,10 @@ async fn test_mongodb_json_nesting(port: u16) {
     assert!(data1.get("name").is_none());
 }
 
+use crate::ContainerManager;
 use datafusion::common::Result as DFResult;
+use linktime::{ctor, dtor};
+
 fn project_record_batch(batch: &RecordBatch, columns: &[&str]) -> DFResult<RecordBatch> {
     let schema = batch.schema();
     let indices: Vec<usize> = columns
@@ -906,21 +909,41 @@ fn project_record_batch(batch: &RecordBatch, columns: &[&str]) -> DFResult<Recor
         .map_err(|e| DataFusionError::ArrowError(Box::new(e), None))
 }
 
-async fn start_mongodb_container(port: u16) -> RunningContainer {
-    let running_container = common::start_mongodb_docker_container(port)
-        .await
-        .expect("MongoDB container to start");
+static CONTAINER_MANAGER_INSTANCE: Mutex<Option<ContainerManager>> = Mutex::new(None);
 
-    tracing::debug!("MongoDB Container started");
+#[ctor(unsafe)]
+fn global_setup() {
+    let mut guard = CONTAINER_MANAGER_INSTANCE.lock().unwrap();
+    *guard = Some(ContainerManager::default());
+}
 
-    running_container
+#[dtor(unsafe)]
+fn global_teardown() {
+    let mut guard = CONTAINER_MANAGER_INSTANCE.lock().unwrap();
+    if let Some(container_manager) = guard.take() {
+        drop(container_manager);
+    }
+}
+
+async fn start_container(manager: &mut ContainerManager) {
+    if !manager.claimed {
+        manager.claimed = true;
+        let running_container = common::start_mongodb_docker_container(manager.port)
+            .await
+            .expect("MongoDB container to start");
+
+        tracing::info!("Container {:?} started", &running_container);
+        manager.running_container = Some(running_container);
+    }
 }
 
 #[rstest]
 #[test_log::test(tokio::test)]
 async fn test_mongodb_arrow_oneway() {
-    let port = crate::get_random_port();
-    let mongodb_container = start_mongodb_container(port).await;
+    let mut guard = CONTAINER_MANAGER_INSTANCE.lock().unwrap();
+    let container_manager = guard.as_mut().unwrap();
+    start_container(container_manager).await;
+    let port = container_manager.port;
 
     test_mongodb_datetime_types(port).await;
     test_mongodb_numeric_types(port).await;
@@ -934,8 +957,6 @@ async fn test_mongodb_arrow_oneway() {
     test_mongodb_unnesting_depth_1(port).await;
     test_mongodb_json_nesting(port).await;
     test_mongodb_sort_limit(port).await;
-
-    mongodb_container.remove().await.expect("container to stop");
 }
 
 /// Regression tests for `ORDER BY ... LIMIT N`.
