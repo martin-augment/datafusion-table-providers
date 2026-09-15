@@ -10,7 +10,7 @@ use std::sync::Mutex;
 
 mod common;
 
-use crate::ContainerManager;
+use crate::docker::ContainerManager;
 use serde::{Deserialize, Serialize};
 
 #[derive(clickhouse::Row, Serialize, Deserialize, Debug, PartialEq)]

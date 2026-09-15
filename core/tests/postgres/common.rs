@@ -10,7 +10,7 @@ use std::sync::Arc;
 use tracing::instrument;
 
 use crate::{
-    container_registry,
+    docker::container_registry,
     docker::{ContainerRunnerBuilder, RunningContainer},
 };
 

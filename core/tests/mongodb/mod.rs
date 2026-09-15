@@ -889,7 +889,7 @@ async fn test_mongodb_json_nesting(port: u16) {
     assert!(data1.get("name").is_none());
 }
 
-use crate::ContainerManager;
+use crate::docker::ContainerManager;
 use datafusion::common::Result as DFResult;
 use linktime::{ctor, dtor};
 

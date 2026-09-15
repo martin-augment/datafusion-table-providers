@@ -22,7 +22,7 @@ use datafusion::logical_expr::dml::InsertOp;
 use datafusion::logical_expr::CreateExternalTable;
 use datafusion::physical_plan::collect;
 
-use crate::ContainerManager;
+use crate::docker::ContainerManager;
 use datafusion_federation::schema_cast::record_convert::try_cast_to;
 use datafusion_table_providers::mysql::MySQLTableProviderFactory;
 use linktime::{ctor, dtor};

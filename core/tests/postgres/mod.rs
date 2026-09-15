@@ -1,4 +1,4 @@
-use crate::{arrow_record_batch_gen::*, ContainerManager};
+use crate::{arrow_record_batch_gen::*, docker::ContainerManager};
 use arrow::{
     array::{
         Array, Decimal128Array, Decimal128Builder, Int32Array, ListArray, ListBuilder, RecordBatch,
