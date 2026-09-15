@@ -1,5 +1,3 @@
-use std::{borrow::Cow, collections::HashMap, sync::Arc};
-
 use bollard::{
     models::{
         ContainerCreateBody, ContainerState, ContainerStateStatusEnum, Health, HealthConfig,
@@ -13,10 +11,20 @@ use bollard::{
     Docker,
 };
 use futures::StreamExt;
+use std::fmt::Debug;
+use std::{borrow::Cow, collections::HashMap, sync::Arc};
 
 pub struct RunningContainer {
     name: Arc<str>,
     docker: Docker,
+}
+
+impl Debug for RunningContainer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RunningContainer")
+            .field("name", &self.name)
+            .finish_non_exhaustive()
+    }
 }
 
 impl RunningContainer {
@@ -196,7 +204,7 @@ impl ContainerRunner<'_> {
                 ..
             }) = inspect_container.state
             {
-                tracing::debug!("Container running & healthy");
+                tracing::info!("Container {} running & healthy", self.name);
                 break;
             }
 
