@@ -33,10 +33,10 @@ fn maybe_db_source_err(err: tokio_postgres::Error) -> Box<dyn Error + Send + Syn
 // between the two modules (postgrespool imports PostgresConnection, which uses
 // this alias).
 pub type PostgresPooledConnection = bb8::PooledConnection<'static, ConnectionManager>;
+use datafusion::common::TableReference;
 use datafusion::error::DataFusionError;
 use datafusion::execution::SendableRecordBatchStream;
 use datafusion::physical_plan::stream::RecordBatchStreamAdapter;
-use datafusion::sql::TableReference;
 use futures::stream;
 use futures::StreamExt;
 
@@ -143,7 +143,7 @@ LEFT JOIN pg_type t ON t.oid = a.atttypid
 LEFT JOIN custom_type_details custom ON custom.typname = t.typname
 WHERE ns.nspname = $1
     AND cls.relname = $2
-    AND cls.relkind IN ('r','v','m')  -- covers tables, normal views, & materialized views
+    AND cls.relkind IN ('r','v','m','f','p')  -- covers tables, normal views, materialized views, foreign tables, & partitioned tables
     AND a.attnum > 0
     AND NOT a.attisdropped
 ORDER BY a.attnum;
